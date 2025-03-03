@@ -1,0 +1,127 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: always
+    env_file: .env
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: |
+      postgres -c max_connections=1000 -c listen_addresses=0.0.0.0
+    volumes:
+      - postgres_data-developn8n-n8n-1658c4:/var/lib/postgresql/data
+    networks:
+      - dokploy-network
+      - developn8n-n8n-1658c4
+  redis:
+    image: redis:6-alpine
+    restart: always
+    command: |
+      redis-server --port 6379 --appendonly yes
+    networks:
+      - dokploy-network
+      - developn8n-n8n-1658c4
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    restart: always
+    environment:
+      - N8N_HOST=${N8N_HOST}
+      - N8N_PORT=${N8N_PORT}
+      - N8N_PROTOCOL=http
+      - NODE_ENV=production
+      - WEBHOOK_URL=http://${N8N_HOST}/
+      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE}
+      - N8N_SECURE_COOKIE=false
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=false
+      - N8N_LICENSE_ACTIVATION_KEY=${N8N_LICENSE_ACTIVATION_KEY}
+      - N8N_LICENSE_SERVER_URL=${N8N_LICENSE_SERVER_URL}
+      - N8N_COMMUNITY_PACKAGES_ENABLED=true
+      - EXECUTIONS_MODE=queue
+      - QUEUE_BULL_REDIS_HOST=redis
+      - VUE_APP_URL_BASE_API=${VUE_APP_URL_BASE_API}
+    volumes:
+      - n8n_data-developn8n-n8n-1658c4:/home/node/.n8n
+    networks:
+      - developn8n-n8n-1658c4
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.developn8n-n8n-1658c4-5-web.rule=Host(`developn8n-n8n-2c2c2d-38-25-66-165.traefik.me`)
+      - traefik.http.routers.developn8n-n8n-1658c4-5-web.entrypoints=web
+      - traefik.http.services.developn8n-n8n-1658c4-5-web.loadbalancer.server.port=5678
+      - traefik.http.routers.developn8n-n8n-1658c4-5-web.service=developn8n-n8n-1658c4-5-web
+  evolution-api:
+    image: atendai/evolution-api:v2.2.3
+    restart: always
+    volumes:
+      - evolution-instances-developn8n-n8n-1658c4:/evolution/instances
+    environment:
+      - SERVER_PORT=8080
+      - SERVER_URL=${SERVER_URL}
+      - AUTHENTICATION_TYPE=${AUTHENTICATION_TYPE}
+      - AUTHENTICATION_API_KEY=${AUTHENTICATION_API_KEY}
+      - AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES=${AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES}
+      - LANGUAGE=${LANGUAGE}
+      - CONFIG_SESSION_PHONE_CLIENT=${CONFIG_SESSION_PHONE_CLIENT}
+      - CONFIG_SESSION_PHONE_NAME=${CONFIG_SESSION_PHONE_NAME}
+      - TELEMETRY=${TELEMETRY}
+      - TELEMETRY_URL=${TELEMETRY_URL}
+      - DATABASE_ENABLED=${DATABASE_ENABLED}
+      - DATABASE_PROVIDER=${DATABASE_PROVIDER}
+      - DATABASE_CONNECTION_URI=${DATABASE_CONNECTION_URI}
+      - DATABASE_SAVE_DATA_INSTANCE=${DATABASE_SAVE_DATA_INSTANCE}
+      - DATABASE_SAVE_DATA_NEW_MESSAGE=${DATABASE_SAVE_DATA_NEW_MESSAGE}
+      - DATABASE_SAVE_MESSAGE_UPDATE=${DATABASE_SAVE_MESSAGE_UPDATE}
+      - DATABASE_SAVE_DATA_CONTACTS=${DATABASE_SAVE_DATA_CONTACTS}
+      - DATABASE_SAVE_DATA_CHATS=${DATABASE_SAVE_DATA_CHATS}
+      - DATABASE_SAVE_DATA_LABELS=${DATABASE_SAVE_DATA_LABELS}
+      - DATABASE_SAVE_DATA_HISTORIC=${DATABASE_SAVE_DATA_HISTORIC}
+      - CACHE_REDIS_ENABLED=${CACHE_REDIS_ENABLED}
+      - CACHE_REDIS_URI=${CACHE_REDIS_URI}
+      - CACHE_REDIS_PREFIX_KEY=${CACHE_REDIS_PREFIX_KEY}
+      - CACHE_REDIS_SAVE_INSTANCES=${CACHE_REDIS_SAVE_INSTANCES}
+    networks:
+      - developn8n-n8n-1658c4
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.developn8n-n8n-1658c4-6-web.rule=Host(`developn8n-evolutionapi-2c2c2d-38-25-66-165.traefik.me`)
+      - traefik.http.routers.developn8n-n8n-1658c4-6-web.entrypoints=web
+      - traefik.http.services.developn8n-n8n-1658c4-6-web.loadbalancer.server.port=8080
+      - traefik.http.routers.developn8n-n8n-1658c4-6-web.service=developn8n-n8n-1658c4-6-web
+  evolution-postgres:
+    image: postgres:16-alpine
+    restart: always
+    volumes:
+      - evolution-postgres-data-developn8n-n8n-1658c4:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${POSTGRES_DATABASE}
+      - POSTGRES_USER=${POSTGRES_USERNAME}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    networks:
+      - developn8n-n8n-1658c4
+  evolution-redis:
+    image: redis:alpine
+    restart: always
+    volumes:
+      - evolution-redis-data-developn8n-n8n-1658c4:/data
+    networks:
+      - developn8n-n8n-1658c4
+networks:
+  dokploy-network:
+    external: true
+  developn8n-n8n-1658c4:
+    name: developn8n-n8n-1658c4
+    external: true
+volumes:
+  evolution-instances-developn8n-n8n-1658c4: null
+  evolution-postgres-data-developn8n-n8n-1658c4: null
+  evolution-redis-data-developn8n-n8n-1658c4: null
+  n8n_data-developn8n-n8n-1658c4: null
+  postgres_data-developn8n-n8n-1658c4: null

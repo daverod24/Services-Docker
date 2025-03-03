@@ -1,0 +1,111 @@
+services:
+  typebot-db:
+    image: postgres:14-alpine
+    container_name: typebot-db
+    restart: always
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: typebot
+      POSTGRES_DB: typebot
+      POSTGRES_PASSWORD: typebot
+      POSTGRES_HOST_AUTH_METHOD: trust
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -h 127.0.0.1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: >
+      postgres -c max_connections=1000 -c listen_addresses=0.0.0.0
+    networks:
+      - dokploy-network 
+
+
+  typebot-builder:
+    image: elestio/typebot-builder:${SOFTWARE_VERSION_TAG-latest}
+    container_name: typebot-builder
+    restart: always
+    depends_on:
+      - typebot-db
+    ports:
+      - "8484:3000"
+    environment:
+      ENCRYPTION_SECRET: '${ENCRYPTION_SECRET}'
+      DATABASE_URL: '${DATABASE_URL:-postgresql://typebot:typebot@typebot-db:5432/typebot}' 
+      NEXTAUTH_URL: '${NEXTAUTH_URL}'
+      NEXT_PUBLIC_VIEWER_URL: '${NEXT_PUBLIC_VIEWER_URL}'
+      ADMIN_EMAIL: '${ADMIN_EMAIL-typebotadmin@gmail.com}'
+      SMTP_HOST: '${SMTP_HOST}'
+      SMTP_PORT: '${SMTP_PORT}'
+      NEXT_PUBLIC_SMTP_FROM: '${NEXT_PUBLIC_SMTP_FROM}'
+      SMTP_USERNAME: '${SMTP_USERNAME}'
+      SMTP_PASSWORD: '${SMTP_PASSWORD}'
+      SMTP_SECURE: '${SMTP_SECURE}'
+      SMTP_AUTH_DISABLED: '${SMTP_AUTH_DISABLED}'
+      DEFAULT_WORKSPACE_PLAN: '${DEFAULT_WORKSPACE_PLAN}'
+      ####
+      S3_ACCESS_KEY: '${S3_ACCESS_KEY-minio}'
+      S3_SECRET_KEY: '${ADMIN_PASSWORD-typebot-pass}'
+      S3_BUCKET: 'typebot'
+      S3_PORT: '${MINIO_PORT-9000}'
+      S3_ENDPOINT: '${S3_ENDPOINT}'
+      S3_SSL: 'true'
+
+    networks:
+      - dokploy-network 
+    deploy:  # Sección para configuraciones de despliegue, incluyendo límites de recursos
+      resources:
+        limits:  # Límites máximos que el contenedor puede usar
+          cpus: '1'      # Límite de CPU: 1 core (puedes usar decimales como '0.5' para medio core)
+          memory: 2048M  # Límite de memoria: 1024 MB (puedes usar G para GB, K para KB, etc.)
+        # reservations: # (Opcional) Reservas mínimas garantizadas (no obligatorio para límites)
+        #   cpus: '0.5'
+        #   memory: 256M
+
+  typebot-viewer:
+    image: elestio/typebot-viewer:${SOFTWARE_VERSION_TAG-latest}
+    container_name: typebot-viewer
+    restart: always
+    ports:
+      - "8585:3000"
+    environment:
+      ENCRYPTION_SECRET: '${ENCRYPTION_SECRET:-mjhcsdkjfhskdhcuhwe}'
+      DATABASE_URL: '${DATABASE_URL:-postgresql://typebot:typebot@typebot-db:5432/typebot}' 
+      NEXTAUTH_URL: '${NEXTAUTH_URL}' #https://builder.tu-dominio.com
+      NEXT_PUBLIC_VIEWER_URL: '${NEXT_PUBLIC_VIEWER_URL}' # https://viewer.tu-dominio.com
+      NEXTAUTH_URL_INTERNAL: '${NEXT_PUBLIC_VIEWER_URL:-http://localhost:3000}' 
+      ADMIN_EMAIL: '${ADMIN_EMAIL}'
+      DISABLE_SIGNUP: "false"
+      SMTP_HOST: '${SMTP_HOST:-smtp.gmail.com}'
+      NEXT_PUBLIC_SMTP_FROM: '${NEXT_PUBLIC_SMTP_FROM:-"tu_usuario <tu-email@gmail.com>"}'
+      SMTP_USERNAME: '${SMTP_USERNAME:-tu-email@gmail.com}'
+      SMTP_PASSWORD: '${SMTP_PASSWORD:-tu_contraseña_de_app}'
+      SMTP_PORT: '${SMTP_PORT:-587}'
+      SMTP_SECURE: '${SMTP_SECURE:-"true"}'
+      SMTP_AUTH_DISABLED: '${SMTP_AUTH_DISABLED}'
+      DEFAULT_WORKSPACE_PLAN: '${DEFAULT_WORKSPACE_PLAN}'
+      ####s3
+      S3_ACCESS_KEY: '${S3_ACCESS_KEY:-minio}'
+      S3_SECRET_KEY: '${ADMIN_PASSWORD:-typebot-pass}'
+      S3_BUCKET: '${S3_BUCKET:-typebot}'
+      S3_PORT: '${MINIO_PORT:-9000}'
+      S3_ENDPOINT: '${S3_ENDPOINT:-minioback.tu-dominio.com}'
+      S3_SSL: '${S3_SSL:-true}' 
+    networks:
+      - dokploy-network 
+    deploy:  # Sección para configuraciones de despliegue, incluyendo límites de recursos
+      resources:
+        limits:  # Límites máximos que el contenedor puede usar
+          cpus: '1'      # Límite de CPU: 1 core (puedes usar decimales como '0.5' para medio core)
+          memory: 2048M   # Límite de memoria: 1024 MB (puedes usar G para GB, K para KB, etc.)
+        # reservations: # (Opcional) Reservas mínimas garantizadas (no obligatorio para límites)
+        #   cpus: '0.5'
+        #   memory: 256M
+
+
+volumes:
+  db-data:
+
+networks:
+  dokploy-network:
+    external: true

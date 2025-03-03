@@ -1,0 +1,132 @@
+x-base-config:
+  image: chatwoot/chatwoot:latest
+  volumes:
+    - chatwoot-storage:/app/storage
+  networks:
+    - dokploy-network
+    - developn8n-chatwoot-09a72e
+  environment:
+    - FRONTEND_URL=${FRONTEND_URL}
+    - SECRET_KEY_BASE=${SECRET_KEY_BASE}
+    - RAILS_ENV=${RAILS_ENV}
+    - NODE_ENV=${NODE_ENV}
+    - INSTALLATION_ENV=${INSTALLATION_ENV}
+    - RAILS_LOG_TO_STDOUT=${RAILS_LOG_TO_STDOUT}
+    - LOG_LEVEL=${LOG_LEVEL}
+    - DEFAULT_LOCALE=${DEFAULT_LOCALE}
+    - POSTGRES_HOST=${POSTGRES_HOST}
+    - POSTGRES_PORT=${POSTGRES_PORT}
+    - POSTGRES_DATABASE=${POSTGRES_DATABASE}
+    - POSTGRES_USERNAME=${POSTGRES_USERNAME}
+    - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    - REDIS_URL=${REDIS_URL}
+    - ENABLE_ACCOUNT_SIGNUP=${ENABLE_ACCOUNT_SIGNUP}
+    - ACTIVE_STORAGE_SERVICE=${ACTIVE_STORAGE_SERVICE}
+services:
+  chatwoot-rails:
+    image: chatwoot/chatwoot:latest
+    volumes:
+      - chatwoot-storage-developn8n-chatwoot-09a72e:/app/storage
+    networks:
+      - dokploy-network
+      - developn8n-chatwoot-09a72e
+    environment:
+      - FRONTEND_URL=${FRONTEND_URL}
+      - SECRET_KEY_BASE=${SECRET_KEY_BASE}
+      - RAILS_ENV=${RAILS_ENV}
+      - NODE_ENV=${NODE_ENV}
+      - INSTALLATION_ENV=${INSTALLATION_ENV}
+      - RAILS_LOG_TO_STDOUT=${RAILS_LOG_TO_STDOUT}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - DEFAULT_LOCALE=${DEFAULT_LOCALE}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DATABASE=${POSTGRES_DATABASE}
+      - POSTGRES_USERNAME=${POSTGRES_USERNAME}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - REDIS_URL=${REDIS_URL}
+      - ENABLE_ACCOUNT_SIGNUP=${ENABLE_ACCOUNT_SIGNUP}
+      - ACTIVE_STORAGE_SERVICE=${ACTIVE_STORAGE_SERVICE}
+    depends_on:
+      chatwoot-postgres:
+        condition: service_started
+      chatwoot-redis:
+        condition: service_started
+    entrypoint: docker/entrypoints/rails.sh
+    command:
+      - bundle
+      - exec
+      - sh
+      - '-c'
+      - rails db:chatwoot_prepare && rails s -p 3000 -b 0.0.0.0
+    restart: always
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.developn8n-chatwoot-09a72e-4-web.rule=Host(`developn8n-chatwoot-aebf6f-38-25-66-165.traefik.me`)
+      - traefik.http.routers.developn8n-chatwoot-09a72e-4-web.entrypoints=web
+      - traefik.http.services.developn8n-chatwoot-09a72e-4-web.loadbalancer.server.port=3000
+      - traefik.http.routers.developn8n-chatwoot-09a72e-4-web.service=developn8n-chatwoot-09a72e-4-web
+  chatwoot-sidekiq:
+    image: chatwoot/chatwoot:latest
+    volumes:
+      - chatwoot-storage-developn8n-chatwoot-09a72e:/app/storage
+    networks:
+      - dokploy-network
+      - developn8n-chatwoot-09a72e
+    environment:
+      - FRONTEND_URL=${FRONTEND_URL}
+      - SECRET_KEY_BASE=${SECRET_KEY_BASE}
+      - RAILS_ENV=${RAILS_ENV}
+      - NODE_ENV=${NODE_ENV}
+      - INSTALLATION_ENV=${INSTALLATION_ENV}
+      - RAILS_LOG_TO_STDOUT=${RAILS_LOG_TO_STDOUT}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - DEFAULT_LOCALE=${DEFAULT_LOCALE}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DATABASE=${POSTGRES_DATABASE}
+      - POSTGRES_USERNAME=${POSTGRES_USERNAME}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - REDIS_URL=${REDIS_URL}
+      - ENABLE_ACCOUNT_SIGNUP=${ENABLE_ACCOUNT_SIGNUP}
+      - ACTIVE_STORAGE_SERVICE=${ACTIVE_STORAGE_SERVICE}
+    depends_on:
+      chatwoot-postgres:
+        condition: service_started
+      chatwoot-redis:
+        condition: service_started
+    command:
+      - bundle
+      - exec
+      - sidekiq
+      - '-C'
+      - config/sidekiq.yml
+    restart: always
+  chatwoot-postgres:
+    image: postgres:16
+    restart: always
+    volumes:
+      - chatwoot-postgres-data-developn8n-chatwoot-09a72e:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${POSTGRES_DATABASE}
+      - POSTGRES_USER=${POSTGRES_USERNAME}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    networks:
+      - developn8n-chatwoot-09a72e
+  chatwoot-redis:
+    image: redis:alpine
+    restart: always
+    volumes:
+      - chatwoot-redis-data-developn8n-chatwoot-09a72e:/data
+    networks:
+      - developn8n-chatwoot-09a72e
+networks:
+  dokploy-network:
+    external: true
+  developn8n-chatwoot-09a72e:
+    name: developn8n-chatwoot-09a72e
+    external: true
+volumes:
+  chatwoot-storage-developn8n-chatwoot-09a72e: null
+  chatwoot-postgres-data-developn8n-chatwoot-09a72e: null
+  chatwoot-redis-data-developn8n-chatwoot-09a72e: null

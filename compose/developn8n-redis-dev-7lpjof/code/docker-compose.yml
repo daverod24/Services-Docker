@@ -1,0 +1,16 @@
+services:
+  redis:
+    image: redis:6-alpine
+    container_name: redis-dev
+    hostname: redis-dev
+    restart: always
+    command: >
+      redis-server --port 6379 --appendonly yes
+    networks:
+      - dokploy-network 
+
+
+networks:
+  dokploy-network:
+    external: true
+

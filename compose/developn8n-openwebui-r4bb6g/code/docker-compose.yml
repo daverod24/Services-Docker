@@ -1,0 +1,83 @@
+services:
+  # OLLAMA CPU Service
+  ollama-cpu:
+    image: ollama/ollama:${OLLAMA_DOCKER_TAG-latest}
+    tty: true
+    networks: 
+      - dokploy-network
+    ports:
+      - 11436:11434
+    volumes:
+      - ollama_storage:/root/.ollama
+    deploy:
+      mode: replicated
+      replicas: 1
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '1'
+          memory: 2G
+      placement:
+        constraints: 
+          - node.role == manager
+          - node.labels.ollama == true
+
+  # Ollama Pull Models Service
+  ollama-pull-llama-cpu:
+    image: ollama/ollama:${OLLAMA_DOCKER_TAG-latest}
+    networks: 
+      - dokploy-network
+    volumes:
+      - ollama_storage:/root/.ollama
+    entrypoint: /bin/sh
+    command:
+      - "-c"
+      - "sleep 3; OLLAMA_HOST=ollama:11434 ollama pull deepseek-r1:1.5b"
+    deploy:
+      mode: replicated
+      replicas: 1
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+      placement:
+        constraints: 
+          - node.role == manager
+          - node.labels.ollama == true
+    depends_on:
+      - ollama-cpu
+
+  # Open WebUI Service
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:${WEBUI_DOCKER_TAG-main}
+    volumes:
+      - open-webui:/app/backend/data
+      - ollama_storage:/root/.ollama
+    depends_on:
+      - ollama-cpu
+    environment:
+      - "OLLAMA_BASE_URL=http://ollama-cpu:11434"
+      - "WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY-null}"
+    deploy:
+      mode: replicated
+      replicas: 1
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+      placement:
+        constraints: 
+          - node.role == manager
+          - node.labels.ollama == true
+    networks:
+      - dokploy-network
+
+networks:
+  dokploy-network:
+    external: true
+
+volumes:
+  ollama_storage:
+  open-webui:
