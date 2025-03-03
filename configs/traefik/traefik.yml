@@ -22,7 +22,7 @@ api:
 certificatesResolvers:
   letsencrypt:
     acme:
-      email: daverod24tech@gmail.com
+      email: '${ACME_EMAIL}'
       storage: /etc/dokploy/traefik/dynamic/acme.json
       httpChallenge:
         entryPoint: websecure

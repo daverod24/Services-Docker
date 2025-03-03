@@ -1,6 +1,0 @@
-tls:
-  certificates:
-    - certFile: >-
-        /etc/dokploy/traefik/dynamic/certificates/certificate-compress-neural-protocol-r7dvfc/chain.crt
-      keyFile: >-
-        /etc/dokploy/traefik/dynamic/certificates/certificate-compress-neural-protocol-r7dvfc/privkey.key
