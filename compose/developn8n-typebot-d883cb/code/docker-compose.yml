@@ -20,23 +20,20 @@ services:
     networks:
       - dokploy-network 
 
-  mail-smtp:
-    image: bytemark/smtp
-    restart: always
-    container_name: mail-smtp
-    environment:
-      RELAY_HOST: ${RELAY_HOST:-smtp.gmail.com}
-      RELAY_PORT: ${RELAY_PORT:-587}
-      RELAY_USERNAME: ${RELAY_USERNAME:-user}
-      RELAY_PASSWORD: ${RELAY_PASSWORD:-password}
-      MAILNAME: ${MAILNAME:-example.com}
-      # RELAY_NETS:
-
-    networks:
-      - dokploy-network
-    ports:
-      - "2525:25"
-      - "587:587"
+  # mail-smtp:
+  #   image: bytemark/smtp
+  #   restart: always
+  #   container_name: mail-smtp
+  #   environment:
+  #     RELAY_HOST: ${RELAY_HOST:-smtp.gmail.com}
+  #     RELAY_PORT: ${RELAY_PORT:-587}
+  #     RELAY_USERNAME: ${RELAY_USERNAME:-user}
+  #     RELAY_PASSWORD: ${RELAY_PASSWORD:-password}
+  #   networks:
+  #     - dokploy-network
+  #   ports:
+  #     - "2525:25"
+  #     - "587:587"
 
 
   typebot-builder:
