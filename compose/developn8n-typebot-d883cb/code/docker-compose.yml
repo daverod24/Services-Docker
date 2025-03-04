@@ -11,7 +11,7 @@ services:
       POSTGRES_PASSWORD: typebot
       POSTGRES_HOST_AUTH_METHOD: trust
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -h 127.0.0.1"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-typebot} -h 127.0.0.1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -19,6 +19,24 @@ services:
       postgres -c max_connections=1000 -c listen_addresses=0.0.0.0
     networks:
       - dokploy-network 
+
+  mail-smtp:
+    image: bytemark/smtp
+    restart: always
+    container_name: mail-smtp
+    environment:
+      RELAY_HOST: ${RELAY_HOST:-smtp.gmail.com}
+      RELAY_PORT: ${RELAY_PORT:-587}
+      RELAY_USERNAME: ${RELAY_USERNAME:-user}
+      RELAY_PASSWORD: ${RELAY_PASSWORD:-password}
+      MAILNAME: ${MAILNAME:-example.com}
+      # RELAY_NETS:
+
+    networks:
+      - dokploy-network
+    ports:
+      - "2525:25"
+      - "587:587"
 
 
   typebot-builder:
