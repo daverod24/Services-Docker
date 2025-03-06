@@ -29,14 +29,61 @@ services:
     image: minio/mc:latest
     hostname: nbuckdev
     container_name: nbuckdev
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio}
+      MINIO_ROOT_PASSWORD: ${ADMIN_PASSWORD:-minio123}
     depends_on:
       - minio_dev
     entrypoint: |
         /bin/sh -c "
         sleep 10;
-        /usr/bin/mc config host add minio_dev https://ssapiminiodevss.daverod.tech ${MINIO_ROOT_USER} ${ADMIN_PASSWORD};
-        /usr/bin/mc mb minio/respaldos;
-        /usr/bin/mc anonymous set public minio/respaldos/public;
+        # Configure MinIO client
+        /usr/bin/mc config host add minio_dev http://minio_dev:9000 ${MINIO_ROOT_USER} ${ADMIN_PASSWORD};
+        
+        # Create buckets
+        /usr/bin/mc mb --ignore-existing minio_dev/respaldos;
+        /usr/bin/mc mb --ignore-existing minio_dev/documentos;
+        /usr/bin/mc mb --ignore-existing minio_dev/media;
+        /usr/bin/mc mb --ignore-existing minio_dev/typebot;
+        /usr/bin/mc mb --ignore-existing minio_dev/chatwoot;
+        /usr/bin/mc mb --ignore-existing minio_dev/dify;
+        
+        # Set public access for respaldos/public
+        /usr/bin/mc anonymous set public minio_dev/respaldos/public;
+        
+        # Create users with API access
+        /usr/bin/mc admin user add minio_dev user1 user1password;
+        /usr/bin/mc admin user add minio_dev user2 user2password;
+        /usr/bin/mc admin user add minio_dev user3 user3password;
+        
+        # Create policy for API access
+        echo '{
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:ListBucket"
+              ],
+              "Resource": [
+          "arn:aws:s3:::respaldos/*",
+          "arn:aws:s3:::respaldos",
+          "arn:aws:s3:::documentos/*",
+          "arn:aws:s3:::documentos",
+          "arn:aws:s3:::media/*",
+          "arn:aws:s3:::media"
+              ]
+            }
+          ]
+        }' > /tmp/policy.json;
+        
+        # Apply policy to users
+        /usr/bin/mc admin policy add minio_dev apiaccess /tmp/policy.json;
+        /usr/bin/mc admin policy set minio_dev apiaccess user=user1;
+        /usr/bin/mc admin policy set minio_dev apiaccess user=user2;
+        /usr/bin/mc admin policy set minio_dev apiaccess user=user3;
         exit 0;
         "
 
