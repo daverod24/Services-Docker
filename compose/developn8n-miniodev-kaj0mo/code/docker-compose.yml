@@ -34,7 +34,7 @@ services:
     entrypoint: |
         /bin/sh -c "
         sleep 10;
-        /usr/bin/mc config host add minio_dev http://minio_dev:9000 ${MINIO_ROOT_USER} ${ADMIN_PASSWORD};
+        /usr/bin/mc config host add minio_dev https://ssapiminiodevss.daverod.tech ${MINIO_ROOT_USER} ${ADMIN_PASSWORD};
         /usr/bin/mc mb minio/respaldos;
         /usr/bin/mc anonymous set public minio/respaldos/public;
         exit 0;
