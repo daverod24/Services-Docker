@@ -42,6 +42,7 @@ services:
         
         # Create buckets
         /usr/bin/mc mb --ignore-existing backups;
+        /usr/bin/mc mb --ignore-existing backups/public;
         /usr/bin/mc mb --ignore-existing documentos;
         /usr/bin/mc mb --ignore-existing media;
         /usr/bin/mc mb --ignore-existing typebot;
@@ -49,7 +50,7 @@ services:
         /usr/bin/mc mb --ignore-existing dify;
         
         # # Set public access for backups/public
-        /usr/bin/mc anonymous set public backups/public;
+        # /usr/bin/mc anonymous set public /backups/public;
         
         # # Create users with API access
         # /usr/bin/mc admin user add minio_dev user1 user1password;
